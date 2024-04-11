@@ -6,7 +6,7 @@
   "author": "alessandroaw",
   "license": "MIT",
   "scripts": {
-    "dev": "ts-node src/index.ts",
+    "dev": "ts-node",
     "build": "tsc"
   },
   "devDependencies": {
