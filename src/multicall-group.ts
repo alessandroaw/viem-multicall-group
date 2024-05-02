@@ -1,11 +1,11 @@
-import { Address, PublicClient } from "viem";
+import { PublicClient } from "viem";
 import { MulticallContext } from "./multicall-context";
 import { MulticallContextKey, _Contract } from "./types";
 
 export class MulticallGroup {
   private client: PublicClient;
   private _contracts: _Contract[] = [];
-  private _results: any[] = [];
+  private _results: unknown[] = [];
   private _isCalled = false;
   private contextMap: Record<string, { start: number; end: number }> = {};
 
