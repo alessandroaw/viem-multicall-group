@@ -1,6 +1,6 @@
 import { createPublicClient, erc20Abi, http } from "viem";
 import { arbitrum } from "viem/chains";
-import { MulticallContext, MulticallGroup } from "../src/multicall-group";
+import { MulticallGroup, createMulticallContext } from "../src/multicall-group";
 
 async function main() {
   const client = createPublicClient({
@@ -10,9 +10,12 @@ async function main() {
 
   const mg = new MulticallGroup(client);
 
-  const tokenInfoCtx: MulticallContext = {
+  const tokenInfoCtx = createMulticallContext({
     label: "token-info",
-    formatter: (result: any) => result,
+    formatter: (result: string[]) => ({
+      name: result[0],
+      symbol: result[1],
+    }),
     contracts: [
       {
         abi: erc20Abi,
@@ -25,7 +28,7 @@ async function main() {
         functionName: "symbol",
       },
     ],
-  };
+  });
 
   mg.addContext(tokenInfoCtx);
 
