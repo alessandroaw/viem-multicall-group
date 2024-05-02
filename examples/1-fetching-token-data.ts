@@ -1,6 +1,17 @@
-import { createPublicClient, erc20Abi, http } from "viem";
+import { Address, createPublicClient, erc20Abi, http } from "viem";
 import { arbitrum } from "viem/chains";
-import { MulticallGroup, createMulticallContext } from "../src/multicall-group";
+import { MulticallGroup } from "../src/multicall-group";
+
+const tokens: Address[] = [
+  // WETH
+  "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
+  // ARB
+  "0x912ce59144191c1204e64559fe8253a0e49e6548",
+  // USDC
+  "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
+  // USDC.e
+  "0xff970a61a04b1ca14834a43f5de4533ebddb5cc8",
+];
 
 async function main() {
   const client = createPublicClient({
@@ -10,32 +21,49 @@ async function main() {
 
   const mg = new MulticallGroup(client);
 
-  const tokenInfoCtx = createMulticallContext({
-    label: "token-info",
-    formatter: (result: string[]) => ({
-      name: result[0],
-      symbol: result[1],
-    }),
-    contracts: [
-      {
-        abi: erc20Abi,
-        address: "0x912CE59144191C1204E64559FE8253a0e49E6548",
-        functionName: "name",
-      },
-      {
-        abi: erc20Abi,
-        address: "0x912CE59144191C1204E64559FE8253a0e49E6548",
-        functionName: "symbol",
-      },
-    ],
+  const tokenInfos = tokens.map((address) => {
+    return {
+      tokenAddress: address,
+      resolver: mg.addContext({
+        key: [address],
+        contracts: [
+          {
+            address,
+            abi: erc20Abi,
+            functionName: "name",
+          },
+          {
+            address,
+            abi: erc20Abi,
+            functionName: "decimals",
+          },
+          {
+            address,
+            abi: erc20Abi,
+            functionName: "symbol",
+          },
+        ],
+        formatter: (results) => {
+          return {
+            name: results[0] as string,
+            decimals: results[1] as bigint,
+            symbol: results[2] as string,
+          };
+        },
+      }),
+    };
   });
-
-  mg.addContext(tokenInfoCtx);
 
   await mg.call();
 
-  const res = mg.getFormatted(tokenInfoCtx);
-  console.log(res);
+  console.log(
+    tokenInfos.map((info) => {
+      return {
+        tokenAddress: info.tokenAddress,
+        ...info.resolver(),
+      };
+    })
+  );
 }
 
 main();
