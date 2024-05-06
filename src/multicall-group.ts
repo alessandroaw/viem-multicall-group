@@ -21,6 +21,17 @@ export class MulticallGroup {
     this._isCalled = true;
   }
 
+  public async callContext<TResult>(
+    context: MulticallContext<TResult>
+  ): Promise<TResult> {
+    const result = await this.client.multicall({
+      contracts: context.contracts,
+      allowFailure: false,
+    });
+
+    return context.formatter(result);
+  }
+
   public addContext<TResult>(
     context: MulticallContext<TResult>
   ): () => TResult {
