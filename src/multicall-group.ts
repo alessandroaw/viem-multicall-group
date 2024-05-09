@@ -1,13 +1,12 @@
 import { PublicClient } from "viem";
-import { MulticallContext } from "./multicall-context";
-import { MulticallContextKey, _Contract } from "./types";
+import { MulticallContext, MulticallContextKey } from "./multicall-context";
 
 export class MulticallGroup {
   private client: PublicClient;
-  private _contracts: _Contract[] = [];
+  private _contracts: unknown[] = [];
   private _results: unknown[] = [];
   private _isCalled = false;
-  private contextMap: Record<string, { start: number; end: number }> = {};
+  private contractSlice: Record<string, SliceDelimiter> = {};
 
   constructor(client: PublicClient) {
     this.client = client;
@@ -15,7 +14,7 @@ export class MulticallGroup {
 
   public async call() {
     this._results = await this.client.multicall({
-      contracts: this._contracts,
+      contracts: this._contracts as readonly unknown[],
       allowFailure: false,
     });
     this._isCalled = true;
@@ -39,21 +38,22 @@ export class MulticallGroup {
     const start = this._contracts.length;
     this._contracts.push(...context.contracts);
     const end = this._contracts.length;
-    this.contextMap[key] = { start, end };
+    this.contractSlice[key] = { start, end };
 
     return () => {
       return this.getFormatted(context);
     };
   }
 
-  public getFormatted<T>(context: MulticallContext<T>) {
+  public getFormatted<TResult>(context: MulticallContext<TResult>) {
     if (!this._isCalled) {
       throw new Error(
         "MulticallGroup.call() must be called before getFormatted"
       );
     }
+
     const key = this._constructKey(context.key);
-    const { start, end } = this.contextMap[key];
+    const { start, end } = this.contractSlice[key];
     const result = this._results.slice(start, end);
     return context.formatter(result);
   }
@@ -62,3 +62,5 @@ export class MulticallGroup {
     return JSON.stringify(key);
   }
 }
+
+type SliceDelimiter = { start: number; end: number };
