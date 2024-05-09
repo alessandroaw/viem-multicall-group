@@ -31,8 +31,8 @@ export class MulticallGroup {
     return context.formatter(result);
   }
 
-  public addContext<TResult>(
-    context: MulticallContext<TResult>
+  public addContext<TResult, const contracts extends readonly unknown[]>(
+    context: MulticallContext<TResult, contracts>
   ): () => TResult {
     const key = this._constructKey(context.key);
     const start = this._contracts.length;
@@ -45,7 +45,9 @@ export class MulticallGroup {
     };
   }
 
-  public getFormatted<TResult>(context: MulticallContext<TResult>) {
+  public getFormatted<TResult, const contracts extends readonly unknown[]>(
+    context: MulticallContext<TResult, contracts>
+  ) {
     if (!this._isCalled) {
       throw new Error(
         "MulticallGroup.call() must be called before getFormatted"
