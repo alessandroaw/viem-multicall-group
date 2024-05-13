@@ -1,4 +1,4 @@
-import { Address, createPublicClient, erc20Abi, http } from "viem";
+import { Address, createPublicClient, erc20Abi, erc721Abi, http } from "viem";
 import { arbitrum } from "viem/chains";
 import { MulticallGroup } from "../src/multicall-group";
 
@@ -11,6 +11,13 @@ const tokens: Address[] = [
   "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
   // USDC.e
   "0xff970a61a04b1ca14834a43f5de4533ebddb5cc8",
+];
+
+const nfts: Address[] = [
+  // XBOX
+  "0xDeeDc540B58D2089e834876f5ecA778FfC507993",
+  // Uniswap V3 NFT
+  "0xc36442b4a4522e871399cd717abdd847ab11fe88",
 ];
 
 async function main() {
@@ -42,27 +49,53 @@ async function main() {
             functionName: "symbol",
           },
         ],
-        formatter: (results) => {
-          return {
-            name: results[0] as string,
-            decimals: results[1] as bigint,
-            symbol: results[2] as string,
-          };
-        },
+        formatter: (results) => ({
+          name: results[0] as string,
+          decimals: results[1] as bigint,
+          symbol: results[2] as string,
+        }),
+      }),
+    };
+  });
+
+  const nftInfos = nfts.map((address) => {
+    return {
+      nftAddress: address,
+      resolver: mg.addContext({
+        contracts: [
+          {
+            address,
+            abi: erc721Abi,
+            functionName: "name",
+          },
+          {
+            address,
+            abi: erc721Abi,
+            functionName: "symbol",
+          },
+        ],
+        formatter: (results) => ({
+          name: results[0] as string,
+          symbol: results[1] as string,
+        }),
       }),
     };
   });
 
   await mg.call();
 
-  console.log(
-    tokenInfos.map((info) => {
-      return {
-        tokenAddress: info.tokenAddress,
-        ...info.resolver(),
-      };
-    })
-  );
+  const formattedTokenInfo = tokenInfos.map((info) => ({
+    tokenAddress: info.tokenAddress,
+    ...info.resolver(),
+  }));
+
+  const formattedNftInfo = nftInfos.map((info) => ({
+    nftAddress: info.nftAddress,
+    ...info.resolver(),
+  }));
+
+  console.log(formattedTokenInfo);
+  console.log(formattedNftInfo);
 }
 
 main();
