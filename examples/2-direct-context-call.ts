@@ -13,8 +13,7 @@ async function main() {
 
   const mg = new MulticallGroup(client);
 
-  const tokenInfo = mg.callContext({
-    key: ["singular-call"],
+  const tokenInfo = await mg.callContext({
     contracts: [
       {
         address: tokenAddress,
@@ -40,6 +39,8 @@ async function main() {
       };
     },
   });
+
+  console.log(tokenInfo);
 }
 
 main();

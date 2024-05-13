@@ -25,7 +25,6 @@ async function main() {
     return {
       tokenAddress: address,
       resolver: mg.addContext({
-        key: [address],
         contracts: [
           {
             address,

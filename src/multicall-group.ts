@@ -1,5 +1,9 @@
 import { PublicClient } from "viem";
-import { MulticallContext, MulticallContextKey } from "./multicall-context";
+import {
+  CreateMulticallContext,
+  MulticallContext,
+  MulticallContextKey,
+} from "./multicall-context";
 
 export class MulticallGroup {
   private client: PublicClient;
@@ -21,7 +25,7 @@ export class MulticallGroup {
   }
 
   public async callContext<TResult>(
-    context: MulticallContext<TResult>
+    context: CreateMulticallContext<TResult>
   ): Promise<TResult> {
     const result = await this.client.multicall({
       contracts: context.contracts,
@@ -32,16 +36,17 @@ export class MulticallGroup {
   }
 
   public addContext<TResult, const contracts extends readonly unknown[]>(
-    context: MulticallContext<TResult, contracts>
+    context: CreateMulticallContext<TResult, contracts>
   ): () => TResult {
-    const key = this._constructKey(context.key);
+    const keySeed = context.key ?? this._generateKey();
+    const key = this._constructKey(keySeed);
     const start = this._contracts.length;
     this._contracts.push(...context.contracts);
     const end = this._contracts.length;
     this.contractSlice[key] = { start, end };
 
     return () => {
-      return this.getFormatted(context);
+      return this.getFormatted({ ...context, key: keySeed });
     };
   }
 
@@ -62,6 +67,12 @@ export class MulticallGroup {
 
   private _constructKey(key: MulticallContextKey) {
     return JSON.stringify(key);
+  }
+
+  private _generateKey(): MulticallContextKey {
+    const timestamp = new Date().getTime();
+    const randomString = Math.random().toString(36).substring(7);
+    return [timestamp, randomString];
   }
 }
 

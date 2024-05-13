@@ -11,6 +11,13 @@ export function createMulticallContext<T>(
   return context;
 }
 
+export type CreateMulticallContext<
+  T,
+  contracts extends readonly unknown[] = readonly ContractFunctionParameters[]
+> = Omit<MulticallContext<T, contracts>, "key"> & {
+  key?: MulticallContextKey;
+};
+
 export type MulticallContext<
   T,
   contracts extends readonly unknown[] = readonly ContractFunctionParameters[]
