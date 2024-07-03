@@ -5,12 +5,16 @@ import {
   Narrow,
 } from "viem";
 
+// createMulticallContext is a helper function to create
+// type-safe MulticallContext objects.
 export function createMulticallContext<T>(
   context: MulticallContext<T>
 ): MulticallContext<T> {
   return context;
 }
 
+// CreateMulticallContext is a proxy type for MulticallContext
+// that allows the key to be generated non-explicitly
 export type CreateMulticallContext<
   T,
   contracts extends readonly unknown[] = readonly ContractFunctionParameters[]
@@ -18,12 +22,13 @@ export type CreateMulticallContext<
   key?: MulticallContextKey;
 };
 
+// MulticallContext is a type-safe object that represents
+// a specific (key based) multicall request with formatted function
 export type MulticallContext<
   T,
   contracts extends readonly unknown[] = readonly ContractFunctionParameters[]
 > = {
   key: MulticallContextKey;
-  // contracts: _Contract[];
   contracts: MulticallContracts<
     Narrow<contracts>,
     { mutability: AbiStateMutability }
@@ -31,6 +36,9 @@ export type MulticallContext<
   formatter: FormatterFn<T>;
 };
 
+// FormatteerFn is a function that takes the result of a multicall
+// and formats it into a specific type
 export type FormatterFn<TResult> = (result: unknown[]) => TResult;
 
+// MulticallContextKey is a identifier to map multicall requests
 export type MulticallContextKey = ReadonlyArray<unknown>;
