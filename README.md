@@ -138,10 +138,13 @@ const tokenInfos = tokens.map((address) => {
           functionName: "symbol",
         },
       ],
+      // Results will pick up type from multicall
+      // In this case:
+      // [string, number, string]
       formatter: (results) => ({
-        name: results[0] as string,
-        decimals: results[1] as bigint,
-        symbol: results[2] as string,
+        name: results[0],
+        decimals: results[1],
+        symbol: results[2],
       }),
     }),
   };
@@ -173,15 +176,21 @@ const nftInfos = nfts.map((address) => {
 
 await mg.call();
 
+// Some example on destructuring the context
 const formattedTokenInfo = tokenInfos.map((info) => ({
   tokenAddress: info.tokenAddress,
   ...info.resolver(),
 }));
 
+// Some example on destructuring the context
 const formattedNftInfo = nftInfos.map((info) => ({
   nftAddress: info.nftAddress,
   ...info.resolver(),
 }));
 ```
 
-In this improved example, each token's related calls are grouped and formatted in one go, demonstrating how this relatively simple module can greatly simplifies interaction with multiple contracts by reducing the complexity and improving code readability and maintainability. This approach not only clarifies the management of different contract types but also showcases the ease of integrating diverse contract calls, like ERC20 and ERC721, within the same framework.
+In this improved example, each token's related calls are grouped and formatted in one go, demonstrating how this relatively simple module can greatly simplifies interaction with multiple contracts by reducing the complexity and improving code readability. This approach clarifies the management of different contract types and also showcases the ease of integrating diverse contract calls, like ERC20 and ERC721, within the same framework.
+
+## More advance example
+
+For more advance examples, please refer to example `examples/3-compound-v3-user-info.ts`
