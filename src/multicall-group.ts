@@ -12,7 +12,7 @@ export class MulticallGroup {
   private _client: PublicClient;
   private _contracts: unknown[] = [];
   private _results: unknown[] = [];
-  private _isCalled = false;
+  private _lastCalled: number = 0;
   private _contractSlice: Record<string, SliceDelimiter> = {};
 
   constructor(client: PublicClient) {
@@ -27,7 +27,7 @@ export class MulticallGroup {
   // direct isolated multicall requests
   public async callContext<
     const contracts extends readonly unknown[],
-    FormatterFnReturn
+    FormatterFnReturn = MulticallReturnType<contracts, false>
   >(
     context: CreateMulticallContext<contracts, FormatterFnReturn>
   ): Promise<FormatterFnReturn> {
@@ -45,19 +45,29 @@ export class MulticallGroup {
   // call is a function to execute all multicall context
   // that were added to the group
   public async call() {
-    this._results = await this._client.multicall({
-      contracts: this._contracts as readonly unknown[],
+    const start = this._lastCalled;
+    const end = this._contracts.length;
+
+    if (start === end) {
+      console.warn("No multicall context to call");
+      return;
+    }
+
+    const contractBatch = this._contracts.slice(start, end);
+    const nextResults = await this._client.multicall({
+      contracts: contractBatch as readonly unknown[],
       allowFailure: false,
     });
 
-    this._isCalled = true;
+    this._results.push(...nextResults);
+    this._lastCalled = this._results.length;
   }
 
   // addContext is a function to add a multicall context
   // to the group and return a function to get the formatted result
   public addContext<
     const contracts extends readonly unknown[],
-    FormatterFnReturn
+    FormatterFnReturn = MulticallReturnType<contracts, false>
   >(
     context: CreateMulticallContext<contracts, FormatterFnReturn>
   ): () => FormatterFnReturn {
@@ -83,14 +93,15 @@ export class MulticallGroup {
     const contracts extends readonly unknown[],
     FormatterFnReturn
   >(context: MulticallContext<contracts, FormatterFnReturn>) {
-    if (!this._isCalled) {
+    const key = this._constructKey(context.key);
+    const { start, end } = this._contractSlice[key];
+
+    if (end > this._lastCalled) {
       throw new Error(
         "MulticallGroup.call() must be called before getFormatted"
       );
     }
 
-    const key = this._constructKey(context.key);
-    const { start, end } = this._contractSlice[key];
     const result = this._results.slice(start, end);
 
     return context.formatter(result as MulticallReturnType<contracts, false>);
