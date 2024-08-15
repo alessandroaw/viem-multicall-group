@@ -190,3 +190,7 @@ const formattedNftInfo = nftInfos.map((info) => ({
 ```
 
 In this improved example, each token's related calls are grouped and formatted in one go, demonstrating how this relatively simple module can greatly simplifies interaction with multiple contracts by reducing the complexity and improving code readability. This approach clarifies the management of different contract types and also showcases the ease of integrating diverse contract calls, like ERC20 and ERC721, within the same framework.
+
+## More advance example
+
+For more advance examples, please refer to example `examples/3-compound-v3-user-info.ts`
