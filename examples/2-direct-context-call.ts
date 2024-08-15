@@ -31,13 +31,6 @@ async function main() {
         functionName: "symbol",
       },
     ],
-    formatter: (res) => {
-      return {
-        name: res[0] as string,
-        decimals: res[1] as bigint,
-        symbol: res[2] as string,
-      };
-    },
   });
 
   console.log(tokenInfo);

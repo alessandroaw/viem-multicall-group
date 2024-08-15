@@ -1,4 +1,4 @@
-import { PublicClient } from "viem";
+import { MulticallReturnType, PublicClient } from "viem";
 import {
   CreateMulticallContext,
   MulticallContext,
@@ -25,14 +25,20 @@ export class MulticallGroup {
 
   // callContext is special function to execute
   // direct isolated multicall requests
-  public async callContext<TResult>(
-    context: CreateMulticallContext<TResult>
-  ): Promise<TResult> {
+  public async callContext<
+    const contracts extends readonly unknown[],
+    FormatterFnReturn
+  >(
+    context: CreateMulticallContext<contracts, FormatterFnReturn>
+  ): Promise<FormatterFnReturn> {
     const result = await this._client.multicall({
       contracts: context.contracts,
       allowFailure: false,
     });
 
+    if (!context.formatter) {
+      return result as FormatterFnReturn;
+    }
     return context.formatter(result);
   }
 
@@ -43,14 +49,18 @@ export class MulticallGroup {
       contracts: this._contracts as readonly unknown[],
       allowFailure: false,
     });
+
     this._isCalled = true;
   }
 
   // addContext is a function to add a multicall context
   // to the group and return a function to get the formatted result
-  public addContext<TResult, const contracts extends readonly unknown[]>(
-    context: CreateMulticallContext<TResult, contracts>
-  ): () => TResult {
+  public addContext<
+    const contracts extends readonly unknown[],
+    FormatterFnReturn
+  >(
+    context: CreateMulticallContext<contracts, FormatterFnReturn>
+  ): () => FormatterFnReturn {
     const keySeed = context.key ?? this._generateKey();
     const key = this._constructKey(keySeed);
     const start = this._contracts.length;
@@ -59,15 +69,20 @@ export class MulticallGroup {
     this._contractSlice[key] = { start, end };
 
     return () => {
-      return this.getFormatted({ ...context, key: keySeed });
+      return this.getFormatted({
+        formatter: (result) => result as FormatterFnReturn,
+        ...context,
+        key: keySeed,
+      });
     };
   }
 
   // getFormatted is a function to get the formatted result
   // based on the multicall context key
-  public getFormatted<TResult, const contracts extends readonly unknown[]>(
-    context: MulticallContext<TResult, contracts>
-  ) {
+  public getFormatted<
+    const contracts extends readonly unknown[],
+    FormatterFnReturn
+  >(context: MulticallContext<contracts, FormatterFnReturn>) {
     if (!this._isCalled) {
       throw new Error(
         "MulticallGroup.call() must be called before getFormatted"
@@ -77,7 +92,8 @@ export class MulticallGroup {
     const key = this._constructKey(context.key);
     const { start, end } = this._contractSlice[key];
     const result = this._results.slice(start, end);
-    return context.formatter(result);
+
+    return context.formatter(result as MulticallReturnType<contracts, false>);
   }
 
   // _constructKey is a function to construct a key

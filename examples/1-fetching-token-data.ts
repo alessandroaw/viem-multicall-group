@@ -50,9 +50,9 @@ async function main() {
           },
         ],
         formatter: (results) => ({
-          name: results[0] as string,
-          decimals: results[1] as bigint,
-          symbol: results[2] as string,
+          name: results[0],
+          decimals: results[1],
+          symbol: results[2],
         }),
       }),
     };
@@ -75,8 +75,8 @@ async function main() {
           },
         ],
         formatter: (results) => ({
-          name: results[0] as string,
-          symbol: results[1] as string,
+          name: results[0],
+          symbol: results[1],
         }),
       }),
     };
